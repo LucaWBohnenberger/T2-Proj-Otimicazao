@@ -1,234 +1,96 @@
 import sys
-import copy
 
-mapa = [[0, 0, 0, 0], 
-        [0, 0, 0, 0],
-        [0, 0, 0, 0],
-        [0, 0, 0, 0]]
+DIRECOES_TODAS = [
+    (-1, 0), (1, 0), (0, -1), (0, 1), 
+    (-1, -1), (-1, 1), (1, -1), (1, 1)
+]
 
+DIRECOES_PASSADO = [
+    (0, -1),   # Esquerda
+    (-1, 0),   # Cima
+    (-1, -1),  # Diagonal Cima-Esquerda
+    (-1, 1)    # Diagonal Cima-Direita
+]
 
-def validarLinha(tabuleiro, linha, coluna, peca):
-    count = 0
-    for i in range(len(tabuleiro)):
-        if peca == "c":
-            if coluna + i < len(tabuleiro) - 1:
-                if tabuleiro[linha][coluna + i] == "b":
-                    count += 1
-                    break
-                if tabuleiro[linha][coluna + i] == "c":
-                    return False, 0
-        else:
-            if coluna + i < len(tabuleiro) - 1:
-                if tabuleiro[linha][coluna + i] == "c":
-                    count += 1
-                    break
-                if tabuleiro[linha][coluna + i] == "b":
-                    return False, 0
+def pode_inserir(tabuleiro, linha, coluna, peca, tamanho):
+    """Garante que a nova peça não veja um amigo nas lajotas já preenchidas."""
+    for dl, dc in DIRECOES_PASSADO:
+        l, c = linha + dl, coluna + dc
+        while 0 <= l < tamanho and 0 <= c < tamanho:
+            peca_encontrada = tabuleiro[l][c]
+            if peca_encontrada == peca:
+                return False  
+            elif peca_encontrada != 0:
+                break  
+            l += dl
+            c += dc
+    return True
 
-    for i in range(len(tabuleiro)):
-        if peca == "c":
-            if coluna - i >= 0:
-                if tabuleiro[linha][coluna - i] == "b":
-                    count += 1
-                    break
-                if tabuleiro[linha][coluna - i] == "c":
-                    return False, 0
-        else:
-            if coluna - i >= 0:
-                if tabuleiro[linha][coluna - i] == "c":
-                    count += 1
-                    break
-                if tabuleiro[linha][coluna - i] == "b":
-                    return False, 0
-    return True, count
-            
-
-def validarColuna(tabuleiro, linha, coluna, peca):
-    count = 0
-    for i in range(len(tabuleiro)):
-        if peca == "c":
-            if linha + i < len(tabuleiro):
-                if tabuleiro[linha + i][coluna] == "b":
-                    count += 1
-                    break
-                if tabuleiro[linha + i][coluna] == "c":
-                    return False, 0
-
-        else:
-            if linha + i < len(tabuleiro):
-                if tabuleiro[linha + i][coluna] == "c":
-                    count += 1
-                    break
-                if tabuleiro[linha + i][coluna] == "b":
-                    return False, 0
-
-    for i in range(len(tabuleiro)):
-        if peca == "c":
-            if linha - i >= 0:
-                if tabuleiro[linha - i][coluna] == "b":
-                    count += 1
-                    break
-                if tabuleiro[linha - i][coluna] == "c":
-                    return False, 0
-        else:
-            if linha - i >= 0:
-                if tabuleiro[linha - i][coluna] == "c":
-                    count += 1
-                    break
-                if tabuleiro[linha - i][coluna] == "b":
-                    return False, 0
-
-    return True, count
-
-
-
-def validarDiagonal(tabuleiro, linha, coluna, peca):
-  
-    for i in range(len(tabuleiro)):
-        count = 0
-        if peca == "c":
-            if linha + i < len(tabuleiro):
-                # Diagonal -45 graus
-                if coluna + i < len(tabuleiro):
-                    if tabuleiro[linha + i][coluna + i] == "b":
-                        count += 1
-                        break
-                    if tabuleiro[linha + i][coluna + i] == "c":
-                        return False, 0
-                    
-                # diagonal 45 graus
-                if coluna - i >= 0:
-                    if tabuleiro[linha + i][coluna - i] == "b":
-                        count += 1
-                        break
-                    if tabuleiro[linha + i][coluna - i] == "c":
-                        return False, 0
-
-        else:
-            if linha + i < len(tabuleiro):
-                # Diagonal -45 graus
-                if coluna + i < len(tabuleiro):
-                    if tabuleiro[linha + i][coluna + i] == "c":
-                        count += 1
-                        break
-                    if tabuleiro[linha + i][coluna + i] == "b":
-                        return False, 0
-                    
-                # diagonal 45 graus
-                if coluna - i >= 0:
-                    if tabuleiro[linha + i][coluna - i] == "c":
-                        count += 1
-                        break
-                    if tabuleiro[linha + i][coluna - i] == "b":
-                        return False, 0
-
-    for i in range(len(tabuleiro)):
-        if peca == "c":
-            if linha - i >= 0:
-                if coluna + i < len(tabuleiro):
-                    if tabuleiro[linha - i][coluna+i] == "b":
-                        count += 1
-                        break
-                    if tabuleiro[linha - i][coluna+i] == "c":
-                        return False, 0
-                if coluna - i >= 0:
-                    if tabuleiro[linha - i][coluna-i] == "b":
-                        count += 1
-                        break
-                    if tabuleiro[linha - i][coluna-i] == "c":
-                        return False, 0
-        else:
-            if linha - i >= 0:
-                if coluna + i < len(tabuleiro):
-                    if tabuleiro[linha - i][coluna+i] == "c":
-                        count += 1
-                        break
-                    if tabuleiro[linha - i][coluna+i] == "b":
-                        return False, 0
-                if coluna - i >= 0:
-                    if tabuleiro[linha - i][coluna-i] == "c":
-                        count += 1
-                        break
-                    if tabuleiro[linha - i][coluna-i] == "b":
-                        return False, 0
-
-    return True, count
-
-def validar(tabuleiro, linha, coluna, peca):
-    val, count = validarLinha(tabuleiro, linha, coluna, peca)
-    val2, count2 = validarColuna(tabuleiro, linha, coluna, peca)
-    val3, count3 = validarDiagonal(tabuleiro, linha, coluna, peca)
-    if val and val2 and val3:
-        return True, count+count2+count3
-    else:
-        return False, 0
-    
-def validar_tabuleiro(tabuleiro):
-    for i in range(len(tabuleiro)):
-        for j in range(len(tabuleiro)):
-            peca = tabuleiro[i][j]
-            if peca in ["c", "b"]:
-                val, count = validar(tabuleiro, i, j, peca)
-                if val and count < 2:
+def validar_tabuleiro_final(tabuleiro, tamanho):
+    for linha in range(tamanho):
+        for coluna in range(tamanho):
+            peca = tabuleiro[linha][coluna]
+            if peca != 0:
+                inimigo = "c" if peca == "b" else "b"
+                count_inimigos = 0
+                
+                for dl, dc in DIRECOES_TODAS:
+                    l, c = linha + dl, coluna + dc
+                    while 0 <= l < tamanho and 0 <= c < tamanho:
+                        peca_encontrada = tabuleiro[l][c]
+                        if peca_encontrada == peca:
+                            return False 
+                        elif peca_encontrada == inimigo:
+                            count_inimigos += 1
+                            break
+                        l += dl
+                        c += dc
+                        
+                if count_inimigos < 2:
                     return False
     return True
 
-def resolver(tabuleiro, linha, coluna, bigodudos, capetas, total):
-    if bigodudos == 0 and capetas == 0:
-        if validar_tabuleiro(tabuleiro):
+def resolver(tabuleiro, linha, coluna, b, c, tamanho, total):
+    if b == 0 and c == 0:
+        if validar_tabuleiro_final(tabuleiro, tamanho):
             total[0] += 1
-            # for i in range(len(tabuleiro)):
-            #     print(tabuleiro[i])
-            # print()
-            return
+        return
     
-    if linha == len(tabuleiro) and coluna == len(tabuleiro):
+    celulas_restantes = (tamanho * tamanho) - (linha * tamanho + coluna)
+    if b + c > celulas_restantes:
         return
 
-    if bigodudos > 0:
-        if validar(tabuleiro, linha, coluna, "b")[0]:
-            tab = copy.deepcopy(tabuleiro)
-            tab[linha][coluna] = "b"
+    if linha == tamanho:
+        return
 
-            if linha < len(tabuleiro)-1:
-                resolver(tab, linha+1, coluna, bigodudos-1, capetas, total)
-            elif coluna < len(tabuleiro)-1:
-                resolver(tab, 0, coluna+1, bigodudos-1, capetas, total)
-                resolver(tabuleiro, 0, coluna+1, bigodudos, capetas, total)
-            elif bigodudos == 0 and capetas == 0:
-                if validar_tabuleiro(tabuleiro):
-                    total[0] += 1
-                    # for i in range(len(tabuleiro)):
-                    #     print(tabuleiro[i])
-                    # print()
-                    return
-    if linha < len(tabuleiro)-1:
-        resolver(tabuleiro, linha+1, coluna, bigodudos, capetas, total)
-    elif coluna < len(tabuleiro)-1:
-        resolver(tabuleiro, 0, coluna+1, bigodudos, capetas, total)
+    prox_coluna = coluna + 1
+    prox_linha = linha
+    if prox_coluna == tamanho:
+        prox_coluna = 0
+        prox_linha = linha + 1
 
-    if capetas > 0:
-        if validar(tabuleiro, linha, coluna, "c")[0]:
-            tab = copy.deepcopy(tabuleiro)
-            tab[linha][coluna] = "c"
-            if linha < len(tabuleiro)-1:
-                resolver(tab, linha+1, coluna, bigodudos, capetas-1, total)
-            elif coluna < len(tabuleiro)-1:
-                resolver(tab, 0, coluna+1, bigodudos, capetas-1, total)
-            elif bigodudos == 0 and capetas == 0:
-                if validar_tabuleiro(tabuleiro):
-                    total[0] += 1
-                    #for i in range(len(tabuleiro)):
-                    #   print(tabuleiro[i])
-                    # print()
-                    return
-    
-valor = [0]
-tamanho = int(sys.argv[1])
-bigodudos = int(sys.argv[2])
-capetas = int(sys.argv[3])
+    if b > 0 and pode_inserir(tabuleiro, linha, coluna, "b", tamanho):
+        tabuleiro[linha][coluna] = "b"
+        resolver(tabuleiro, prox_linha, prox_coluna, b - 1, c, tamanho, total)
+        tabuleiro[linha][coluna] = 0  
 
-tabuleiro = [[0]*tamanho for i in range(tamanho)]
+    if c > 0 and pode_inserir(tabuleiro, linha, coluna, "c", tamanho):
+        tabuleiro[linha][coluna] = "c"
+        resolver(tabuleiro, prox_linha, prox_coluna, b, c - 1, tamanho, total)
+        tabuleiro[linha][coluna] = 0  
 
-resolver(tabuleiro, 0, 0, bigodudos, capetas, valor)
-print(valor)
+    resolver(tabuleiro, prox_linha, prox_coluna, b, c, tamanho, total)
+
+if __name__ == "__main__":
+    if len(sys.argv) >= 4:
+        tamanho = int(sys.argv[1])
+        bigodudos = int(sys.argv[2])
+        capetas = int(sys.argv[3])
+
+        tabuleiro = [[0]*tamanho for _ in range(tamanho)]
+        valor = [0]
+
+        resolver(tabuleiro, 0, 0, bigodudos, capetas, tamanho, valor)
+        print(valor[0])
+    else:
+        print("Uso: python salao.py <n> <b> <c>")
